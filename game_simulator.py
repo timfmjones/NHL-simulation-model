@@ -29,24 +29,14 @@ def simulate_game(team1, team2, model):
 
     # Schedule initial events (e.g., initial faceoff)
     schedule_event(event_queue, 0, 'faceoff', team1)
-    schedule_event(event_queue, 0, 'faceoff', team2)
 
     while event_queue and current_time < game_duration:
         event = heapq.heappop(event_queue)
         current_time = event.time
 
         if event.event_type == 'faceoff':
-            # Determine which team wins the faceoff
-            if random.random() < 0.5:
-                winning_team = team1
-                losing_team = team2
-            else:
-                winning_team = team2
-                losing_team = team1
 
-            print(f"Faceoff won by team {winning_team.name} at {current_time} minutes")
-            # Schedule the next events for the winning team
-            schedule_event(event_queue, current_time + random.expovariate(1/5), 'attempt_goal', winning_team)
+            handle_faceoff(team1, team2, event, event_queue)
 
         elif event.event_type == 'attempt_goal':
             # features = [
@@ -102,12 +92,12 @@ def simulate_game(team1, team2, model):
         elif event.event_type == 'block_shot':
             print(f"Shot blocked by team {event.team.name} at {current_time} minutes")
             # Schedule the next events after a block
-            schedule_event(event_queue, current_time + random.expovariate(1/10), 'attempt_goal', team1 if event.team == team2 else team2)
+            # schedule_event(event_queue, current_time + random.gauss(5, 2), 'attempt_goal', team1 if event.team == team2 else team2)
         
         elif event.event_type == 'save_shot':
             print(f"Shot saved by team {event.team.name} at {current_time} minutes")
             # Schedule the next events after a save
-            schedule_event(event_queue, current_time + random.expovariate(1/10), 'attempt_goal', team1 if event.team == team2 else team2)
+            # schedule_event(event_queue, current_time + random.gauss(5, 2), 'attempt_goal', team1 if event.team == team2 else team2)
 
         elif event.event_type == 'penalty':
             # Schedule the end of the penalty
@@ -206,8 +196,8 @@ def main():
             'score2': score2
         })
 
-    results_df = pd.DataFrame(results)
-    results_df.to_csv('simulation_results.csv', index=False)
+    # results_df = pd.DataFrame(results)
+    # results_df.to_csv('simulation_results.csv', index=False)
 
 def failed_shot_event(team1, team2, event, event_queue):
     print(f"Shot on goal by team {team1.name} at {event.time} minutes")
@@ -217,7 +207,36 @@ def failed_shot_event(team1, team2, event, event_queue):
         schedule_event(event_queue, event.time + 1, 'save_shot', team2)
 
 
-def handle_faceoff(team1, team2, event, event_queue)
+def handle_faceoff(team1, team2, event, event_queue):
+    teams = pd.read_csv('data/teams_2024.csv')
+    team1_stat = teams[(teams['team'] == team1.name) & (teams['situation'] == 'all')]
+    team1_stats = team1_stat.iloc[0]
+    team1_faceoffs_won = team1_stats['faceOffsWonFor']
+    team1_faceoffs_against = team1_stats['faceOffsWonAgainst']
+    team1_percent = team1_faceoffs_won / (team1_faceoffs_against + team1_faceoffs_won)
+
+    team2_stat = teams[(teams['team'] == team2.name) & (teams['situation'] == 'all')]
+    team2_stats = team2_stat.iloc[0]
+    team2_faceoffs_won = team2_stats['faceOffsWonFor']
+    team2_faceoffs_against = team2_stats['faceOffsWonAgainst']
+    team2_percent = team2_faceoffs_won / (team2_faceoffs_against + team2_faceoffs_won)
+
+    total_percent = team1_percent + team2_percent
+    team1_relative_percentage = team1_percent / (team1_percent + team2_percent)
+
+
+    print(team1_relative_percentage)
+    if random.random() < team1_relative_percentage:
+        winning_team = team1
+        losing_team = team2
+    else:
+        winning_team = team2
+        losing_team = team1
+
+    print(f"Faceoff won by team {winning_team.name} at {event.time} minutes")
+    schedule_event(event_queue, event.time + random.gauss(8, 2), 'attempt_goal', winning_team)
+
+
 
 if __name__ == "__main__":
     main()
