@@ -159,6 +159,7 @@ def simulate_game(team1, team2, model):
     return round(score1), round(score2)
 
 def main():
+    print("running main")
     skaters_file = 'data/skaters_2024.csv'
     goalies_file = 'data/goalies_2024.csv'
     teams_file = 'data/teams_2024.csv'
@@ -189,6 +190,7 @@ def main():
     random_team_2 = random.choice(list(teams.values()))
     if random_team_1 != random_team_2:
         score1, score2 = simulate_game(random_team_1, random_team_2, model)
+        results
         results.append({
             'team1': random_team_1.name,
             'team2': random_team_2.name,
@@ -236,6 +238,35 @@ def handle_faceoff(team1, team2, event, event_queue):
     print(f"Faceoff won by team {winning_team.name} at {event.time} minutes")
     schedule_event(event_queue, event.time + random.gauss(8, 2), 'attempt_goal', winning_team)
 
+handle_shot_attempt(team1, team2, event, event_queue):
+    teams = pd.read_csv('data/teams_2024.csv')
+    team1_stat = teams[(teams['team'] == team1.name) & (teams['situation'] == 'all')]
+    team1_stats = team1_stat.iloc[0]
+
+    team1_shot_attempts_for = team1_stats['shotAttemptsFor']
+    team1_blocked_shot_attempts_for = team1_stats['blockedShotAttemptsFor']
+    team1_missed_shot_attempts_for = team1_stats['missedShotsFor']
+    team1_on_goal_shot_attempts_for = team1_stats['shotsOnGoalFor']
+
+    team1_blocked_shot_attempts_for_percentage = team1_blocked_shot_attempts_for/team1_shot_attempts_for
+    team1_missed_shot_attempts_for_percentage = team1_missed_shot_attempts_for/team1_shot_attempts_for
+    team1_on_goal_shot_attempts_for_percentage = team1_on_goal_shot_attempts_for/team1_shot_attempts_for
+    
+    
+    teams = pd.read_csv('data/teams_2024.csv')
+    team2_stat = teams[(teams['team'] == team2.name) & (teams['situation'] == 'all')]
+    team2_stats = team2_stat.iloc[0]
+    team2_shot_attempts_against = team2_stats['shotAttemptsAgainst']
+    team2_blocked_shot_attempts_against = team2_stats['blockedShotAttemptsAgainst']
+    team2_missed_shot_attempts_against = team2_stats['missedShotsAgainst']
+    team2_on_goal_shot_attempts_against = team1_stats['shotsOnGoalAgainst']
+
+    team2_blocked_shot_attempts_against_percentage = team2_blocked_shot_attempts_against/team2_shot_attempts_against
+    team2_missed_shot_attempts_against_percentage = team2_missed_shot_attempts_against/team2_shot_attempts_against
+    team2_on_goal_shot_attempts_against_percentage = team2_on_goal_shot_attempts_against/team2_shot_attempts_against
+
+    blocked_shot_attempt_relative_percentage = (team1_blocked_shot_attempts_for_percentage + team2_blocked_shot_attempts_against_percentage) / 2
+    
 
 
 if __name__ == "__main__":
