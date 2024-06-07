@@ -52,52 +52,56 @@ def simulate_game(team1, team2, model):
             print("shot prob goal: ", prob_goal)
 
             if event.team == team1:
-                if random.random() < prob_goal:
-                    #Goal team 1
-                    score1 += 1
-                    print(f"Team {team1.name} scored at {current_time} minutes")
-                    schedule_event(event_queue, current_time + 1, 'assist', team1)
-                else:
-                    #Failed shot attempt team1
-                    # print(f"Shot on goal by team {team1.name} at {current_time} minutes")
-                    # if random.random() < 0.5:
-                    #     schedule_event(event_queue, current_time + 1, 'block_shot', team2)
-                    # else:
-                    #     schedule_event(event_queue, current_time + 1, 'save_shot', team2) 
-                    failed_shot_event(team1, team2, event, event_queue)
+                # if random.random() < prob_goal:
+                #     #Goal team 1
+                #     score1 += 1
+                #     print(f"Team {team1.name} scored at {current_time} minutes")
+                #     schedule_event(event_queue, current_time + 1, 'assist', team1)
+                # else:
+                #     #Failed shot attempt team1
+                #     # print(f"Shot on goal by team {team1.name} at {current_time} minutes")
+                #     # if random.random() < 0.5:
+                #     #     schedule_event(event_queue, current_time + 1, 'block_shot', team2)
+                #     # else:
+                #     #     schedule_event(event_queue, current_time + 1, 'save_shot', team2) 
+                #     failed_shot_event(team1, team2, event, event_queue)
 
-                    #TODO logic to decide how shot attempt failed
+                #     #TODO logic to decide how shot attempt failed
+                handle_on_goal_shot_attempt(team1, team2, event, event_queue)
             else:
-                if random.random() < prob_goal:
-                    # Goal team 2
-                    score2 += 1
-                    print(f"Team {team2.name} scored at {current_time} minutes")
-                    schedule_event(event_queue, current_time + 1, 'assist', team2)
-                else:
-                    # Failed shot attempt team 2
-                    # print(f"Shot on goal by team {team2.name} at {current_time} minutes")
-                    # schedule_event(event_queue, current_time + 1, 'block_shot', team1)
-                    failed_shot_event(team2, team1, event, event_queue)
-
+                # if random.random() < prob_goal:
+                #     # Goal team 2
+                #     score2 += 1
+                #     print(f"Team {team2.name} scored at {current_time} minutes")
+                #     schedule_event(event_queue, current_time + 1, 'assist', team2)
+                # else:
+                #     # Failed shot attempt team 2
+                #     # print(f"Shot on goal by team {team2.name} at {current_time} minutes")
+                #     # schedule_event(event_queue, current_time + 1, 'block_shot', team1)
+                #     failed_shot_event(team2, team1, event, event_queue)
+                handle_on_goal_shot_attempt(team2, team1, event, event_queue)
             # Schedule the next goal attempt
-            next_goal_time = current_time + random.expovariate(1/10)
-            schedule_event(event_queue, next_goal_time, 'attempt_goal', event.team)
+            # next_goal_time = current_time + random.expovariate(1/10)
+            # schedule_event(event_queue, next_goal_time, 'attempt_goal', event.team)
 
         elif event.event_type == 'assist':
             print(f"Assist for team {event.team.name} at {current_time} minutes")
             # Schedule the next faceoff after a goal
             schedule_event(event_queue, current_time + 1, 'faceoff', team1)
             schedule_event(event_queue, current_time + 1, 'faceoff', team2)
+        
+        elif event.event_type == "on_goal_shot":
+            handle_on_goal_shot()
 
         elif event.event_type == 'block_shot':
             print(f"Shot blocked by team {event.team.name} at {current_time} minutes")
             # Schedule the next events after a block
-            # schedule_event(event_queue, current_time + random.gauss(5, 2), 'attempt_goal', team1 if event.team == team2 else team2)
+            schedule_event(event_queue, current_time + random.gauss(5, 2), 'attempt_goal', team1 if event.team == team2 else team2)
         
         elif event.event_type == 'save_shot':
             print(f"Shot saved by team {event.team.name} at {current_time} minutes")
             # Schedule the next events after a save
-            # schedule_event(event_queue, current_time + random.gauss(5, 2), 'attempt_goal', team1 if event.team == team2 else team2)
+            schedule_event(event_queue, current_time + random.gauss(5, 2), 'attempt_goal', team1 if event.team == team2 else team2)
 
         elif event.event_type == 'penalty':
             # Schedule the end of the penalty
@@ -238,7 +242,7 @@ def handle_faceoff(team1, team2, event, event_queue):
     print(f"Faceoff won by team {winning_team.name} at {event.time} minutes")
     schedule_event(event_queue, event.time + random.gauss(8, 2), 'attempt_goal', winning_team)
 
-handle_shot_attempt(team1, team2, event, event_queue):
+def handle_shot_attempt(team1, team2, event, event_queue):
     teams = pd.read_csv('data/teams_2024.csv')
     team1_stat = teams[(teams['team'] == team1.name) & (teams['situation'] == 'all')]
     team1_stats = team1_stat.iloc[0]
@@ -252,8 +256,7 @@ handle_shot_attempt(team1, team2, event, event_queue):
     team1_missed_shot_attempts_for_percentage = team1_missed_shot_attempts_for/team1_shot_attempts_for
     team1_on_goal_shot_attempts_for_percentage = team1_on_goal_shot_attempts_for/team1_shot_attempts_for
     
-    
-    teams = pd.read_csv('data/teams_2024.csv')
+
     team2_stat = teams[(teams['team'] == team2.name) & (teams['situation'] == 'all')]
     team2_stats = team2_stat.iloc[0]
     team2_shot_attempts_against = team2_stats['shotAttemptsAgainst']
@@ -266,7 +269,57 @@ handle_shot_attempt(team1, team2, event, event_queue):
     team2_on_goal_shot_attempts_against_percentage = team2_on_goal_shot_attempts_against/team2_shot_attempts_against
 
     blocked_shot_attempt_relative_percentage = (team1_blocked_shot_attempts_for_percentage + team2_blocked_shot_attempts_against_percentage) / 2
-    
+    missed_shot_attempt_relative_percentage = (team1_missed_shot_attempts_for_percentage + team2_missed_shot_attempts_against_percentage) / 2
+    on_goal_shot_attempt_relative_percentage = (team1_on_goal_shot_attempts_for_percentage + team2_on_goal_shot_attempts_against_percentage) / 2
+
+    random_number = random.random() 
+
+    if random_number < blocked_shot_attempt_relative_percentage:
+        print("shot was blocked")
+        schedule_event(event_queue, event.time + 1, 'block_shot', team2)
+    elif random_number < blocked_shot_attempt_relative_percentage + missed_shot_attempt_relative_percentage:
+        print("shot missed")
+        schedule_event(event_queue, event.time + 1, 'block_shot', team2)
+    else:
+        print("shot on target")
+        schedule_event(event_queue, event.time + 1, 'save_shot', team2)
+
+
+def handle_on_goal_shot_attempt(team1, team2, event, event_queue):
+    teams = pd.read_csv('data/teams_2024.csv')
+    team1_stat = teams[(teams['team'] == team1.name) & (teams['situation'] == 'all')]
+    team1_stats = team1_stat.iloc[0]
+
+    team1_on_goal_shot_attempts_for = team1_stats['shotsOnGoalFor']
+    team1_goals_for = team1_stats['goalsFor']
+    team1_on_saved_goal_shot_attempts_for = team1_stats['savedShotsOnGoalFor']
+
+    team1_goals_for_percentage = team1_goals_for/team1_on_goal_shot_attempts_for
+    team1_on_saved_goal_shot_attempts_for_percentage = team1_on_saved_goal_shot_attempts_for/team1_on_goal_shot_attempts_for
+
+
+    team2_stat = teams[(teams['team'] == team2.name) & (teams['situation'] == 'all')]
+    team2_stats = team2_stat.iloc[0]
+
+    team2_on_goal_shot_attempts_against = team2_stats['shotsOnGoalAgainst']
+    team2_goals_against = team2_stats['goalsAgainst']
+    team2_on_saved_goal_shot_attempts_against = team2_stats['savedShotsOnGoalAgainst']
+
+    team2_goals_against_percentage = team2_goals_against/team2_on_goal_shot_attempts_against
+    team2_on_saved_goal_shot_attempts_against_percentage = team2_on_saved_goal_shot_attempts_against/team2_on_goal_shot_attempts_against
+
+    goals_relative_percentage = (team1_goals_for_percentage + team2_goals_against_percentage)/2
+    saved_on_goal_shot_attempt = (team1_on_saved_goal_shot_attempts_for_percentage + team2_on_saved_goal_shot_attempts_against_percentage)/2
+
+    random_number = random.random() 
+
+    if random_number < goals_relative_percentage:
+        print("GOAL")
+        print(f"Team {team2.name} scored at {event.time} minutes")
+        schedule_event(event_queue, current_time + 1, 'assist', team2)
+    else:
+        failed_shot_event(team1, team2, event, event_queue)
+
 
 
 if __name__ == "__main__":
