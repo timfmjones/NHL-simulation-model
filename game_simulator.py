@@ -35,118 +35,124 @@ def simulate_game(team1, team2, model):
     # Schedule initial events (e.g., initial faceoff)
     schedule_event(event_queue, 0, 'faceoff', team1)
 
-    while event_queue and current_time < game_duration:
-        event = heapq.heappop(event_queue)
-        current_time = event.time
+    for i in range(3):
+        print("Period ", i+1)
+        current_time = 0
+        event_queue = []
+        schedule_event(event_queue, 0, 'faceoff', team1)
 
-        if event.event_type == 'faceoff':
+        while event_queue and current_time < period_duration:
+            event = heapq.heappop(event_queue)
+            current_time = event.time
 
-            handle_faceoff(team1, team2, event, event_queue, game_stats)
+            if event.event_type == 'faceoff':
 
-
-        elif event.event_type == 'attempt_goal':
-            # features = [
-            #     event.team.games_played, event.team.icetime, event.team.shifts, event.team.gameScore,
-            #     event.team.onIce_xGoalsPercentage, event.team.offIce_xGoalsPercentage,
-            #     event.team.onIce_corsiPercentage, event.team.offIce_corsiPercentage,
-            #     event.team.onIce_fenwickPercentage, event.team.offIce_fenwickPercentage
-            #     # Add more features as necessary
-            # ]
-
-            # features = [event.team.xGoalsPercentage, event.team.fenwickPercentage, event.team.corsiPercentage, event.team.xGoalsFor]
-            # prob_goal = model.predict_proba([features])[0][1]
-            # print("shot prob goal: ", prob_goal)
-
-            if event.team == team1:
-                handle_shot_attempt(team1, team2, event, event_queue, game_stats)
-            else:
-                handle_shot_attempt(team2, team1, event, event_queue, game_stats)
-            # Schedule the next goal attempt
-            # next_goal_time = current_time + random.expovariate(1/10)
-            # schedule_event(event_queue, next_goal_time, 'attempt_goal', event.team)
-
-        elif event.event_type == 'assist':
-            print(f"Assist for team {event.team.name} at {current_time} minutes")
-            # Schedule the next faceoff after a goal
-            schedule_event(event_queue, current_time + 1, 'faceoff', team1)
-            schedule_event(event_queue, current_time + 1, 'faceoff', team2)
-        
-        elif event.event_type == "on_goal_shot":
-            handle_on_goal_shot()
-
-        elif event.event_type == 'block_shot':
-            print(f"Blocked shot by team {event.team.name} at {current_time} minutes")
-            # Update stats 
-            game_stats.teams[event.team.name]['blockedShots'] += 1
-            # Schedule the next events after a block
-            schedule_event(event_queue, current_time + random.gauss(5, 2), 'attempt_goal', event.team )
-        
-        elif event.event_type == 'save_shot':
-            print(f"Saved shot by team {event.team.name} at {current_time} minutes")
-            # Schedule the next events after a save
-            schedule_event(event_queue, current_time + random.gauss(5, 2), 'attempt_goal', event.team)
-
-        elif event.event_type == 'missed_shot':
-            print(f"Missed shot by {event.team.name} at {current_time} minutes")
-            schedule_event(event_queue, current_time + random.gauss(5, 2), 'attempt_goal', team1 if event.team == team2 else team2)
+                handle_faceoff(team1, team2, event, event_queue, game_stats)
 
 
-        elif event.event_type == 'penalty':
-            # Schedule the end of the penalty
-            penalty_duration = 2  # 2 minutes for a standard minor penalty
-            schedule_event(event_queue, current_time + penalty_duration, 'end_penalty', event.team)
-            print(f"Penalty for team {event.team.name} at {current_time} minutes")
+            elif event.event_type == 'attempt_goal':
+                # features = [
+                #     event.team.games_played, event.team.icetime, event.team.shifts, event.team.gameScore,
+                #     event.team.onIce_xGoalsPercentage, event.team.offIce_xGoalsPercentage,
+                #     event.team.onIce_corsiPercentage, event.team.offIce_corsiPercentage,
+                #     event.team.onIce_fenwickPercentage, event.team.offIce_fenwickPercentage
+                #     # Add more features as necessary
+                # ]
 
-            # Schedule power play events for the other team
-            power_play_end = current_time + penalty_duration
-            schedule_event(event_queue, current_time + random.expovariate(1/5), 'power_play', team1 if event.team == team2 else team2, power_play_end)
+                # features = [event.team.xGoalsPercentage, event.team.fenwickPercentage, event.team.corsiPercentage, event.team.xGoalsFor]
+                # prob_goal = model.predict_proba([features])[0][1]
+                # print("shot prob goal: ", prob_goal)
 
-        elif event.event_type == 'end_penalty':
-            print(f"Penalty ended for team {event.team.name} at {current_time} minutes")
+                if event.team == team1:
+                    handle_shot_attempt(team1, team2, event, event_queue, game_stats)
+                else:
+                    handle_shot_attempt(team2, team1, event, event_queue, game_stats)
+                # Schedule the next goal attempt
+                # next_goal_time = current_time + random.expovariate(1/10)
+                # schedule_event(event_queue, next_goal_time, 'attempt_goal', event.team)
 
-        elif event.event_type == 'power_play':
-            if current_time < event.player:
-                print(f"Power play for team {event.team.name} at {current_time} minutes")
-                schedule_event(event_queue, current_time + random.expovariate(1/10), 'attempt_goal', event.team)
+            elif event.event_type == 'assist':
+                print(f"Assist for team {event.team.name} at {current_time} minutes")
+                # Schedule the next faceoff after a goal
+                schedule_event(event_queue, current_time + 1, 'faceoff', team1)
+                schedule_event(event_queue, current_time + 1, 'faceoff', team2)
+            
+            elif event.event_type == "on_goal_shot":
+                handle_on_goal_shot()
 
-        elif event.event_type == 'breakaway':
-            print(f"Breakaway for team {event.team.name} at {current_time} minutes")
-            schedule_event(event_queue, current_time + 1, 'attempt_goal', event.team)
+            elif event.event_type == 'block_shot':
+                print(f"Blocked shot by team {event.team.name} at {current_time} minutes")
+                # Update stats 
+                game_stats.teams[event.team.name]['blockedShots'] += 1
+                # Schedule the next events after a block
+                schedule_event(event_queue, current_time + random.gauss(5, 2), 'attempt_goal', event.team )
+            
+            elif event.event_type == 'save_shot':
+                print(f"Saved shot by team {event.team.name} at {current_time} minutes")
+                # Schedule the next events after a save
+                schedule_event(event_queue, current_time + random.gauss(5, 2), 'attempt_goal', event.team)
 
-        elif event.event_type == 'turnover':
-            print(f"Turnover by team {event.team.name} at {current_time} minutes")
-            next_team = team1 if event.team == team2 else team2
-            schedule_event(event_queue, current_time + 1, 'attempt_goal', next_team)
+            elif event.event_type == 'missed_shot':
+                print(f"Missed shot by {event.team.name} at {current_time} minutes")
+                schedule_event(event_queue, current_time + random.gauss(5, 2), 'attempt_goal', team1 if event.team == team2 else team2)
 
-        elif event.event_type == 'interception':
-            print(f"Interception by team {event.team.name} at {current_time} minutes")
-            next_team = team1 if event.team == team2 else team2
-            schedule_event(event_queue, current_time + 1, 'attempt_goal', next_team)
 
-        elif event.event_type == 'injury':
-            print(f"Injury for team {event.team.name} at {current_time} minutes")
-            # Schedule next shift change if a player is injured
-            schedule_event(event_queue, current_time + random.expovariate(1/5), 'shift_change', event.team)
+            elif event.event_type == 'penalty':
+                # Schedule the end of the penalty
+                penalty_duration = 2  # 2 minutes for a standard minor penalty
+                schedule_event(event_queue, current_time + penalty_duration, 'end_penalty', event.team)
+                print(f"Penalty for team {event.team.name} at {current_time} minutes")
 
-        elif event.event_type == 'timeout':
-            print(f"Timeout called by team {event.team.name} at {current_time} minutes")
-            # After timeout, schedule faceoff
-            schedule_event(event_queue, current_time + 1, 'faceoff', team1)
-            schedule_event(event_queue, current_time + 1, 'faceoff', team2)
+                # Schedule power play events for the other team
+                power_play_end = current_time + penalty_duration
+                schedule_event(event_queue, current_time + random.expovariate(1/5), 'power_play', team1 if event.team == team2 else team2, power_play_end)
 
-        elif event.event_type == 'end_period':
-            print(f"End of period at {current_time} minutes")
-            if current_time < game_duration:
-                # Schedule start of next period
-                schedule_event(event_queue, current_time + 1, 'start_period', team1)
-                schedule_event(event_queue, current_time + 1, 'start_period', team2)
+            elif event.event_type == 'end_penalty':
+                print(f"Penalty ended for team {event.team.name} at {current_time} minutes")
 
-        elif event.event_type == 'start_period':
-            print(f"Start of period at {current_time} minutes")
-            schedule_event(event_queue, current_time + random.expovariate(1/5), 'shift_change', team1)
-            schedule_event(event_queue, current_time + random.expovariate(1/5), 'shift_change', team2)
-            schedule_event(event_queue, current_time + random.expovariate(1/10), 'attempt_goal', team1)
-            schedule_event(event_queue, current_time + random.expovariate(1/10), 'attempt_goal', team2)
+            elif event.event_type == 'power_play':
+                if current_time < event.player:
+                    print(f"Power play for team {event.team.name} at {current_time} minutes")
+                    schedule_event(event_queue, current_time + random.expovariate(1/10), 'attempt_goal', event.team)
+
+            elif event.event_type == 'breakaway':
+                print(f"Breakaway for team {event.team.name} at {current_time} minutes")
+                schedule_event(event_queue, current_time + 1, 'attempt_goal', event.team)
+
+            elif event.event_type == 'turnover':
+                print(f"Turnover by team {event.team.name} at {current_time} minutes")
+                next_team = team1 if event.team == team2 else team2
+                schedule_event(event_queue, current_time + 1, 'attempt_goal', next_team)
+
+            elif event.event_type == 'interception':
+                print(f"Interception by team {event.team.name} at {current_time} minutes")
+                next_team = team1 if event.team == team2 else team2
+                schedule_event(event_queue, current_time + 1, 'attempt_goal', next_team)
+
+            elif event.event_type == 'injury':
+                print(f"Injury for team {event.team.name} at {current_time} minutes")
+                # Schedule next shift change if a player is injured
+                schedule_event(event_queue, current_time + random.expovariate(1/5), 'shift_change', event.team)
+
+            elif event.event_type == 'timeout':
+                print(f"Timeout called by team {event.team.name} at {current_time} minutes")
+                # After timeout, schedule faceoff
+                schedule_event(event_queue, current_time + 1, 'faceoff', team1)
+                schedule_event(event_queue, current_time + 1, 'faceoff', team2)
+
+            elif event.event_type == 'end_period':
+                print(f"End of period at {current_time} minutes")
+                if current_time < game_duration:
+                    # Schedule start of next period
+                    schedule_event(event_queue, current_time + 1, 'start_period', team1)
+                    schedule_event(event_queue, current_time + 1, 'start_period', team2)
+
+            elif event.event_type == 'start_period':
+                print(f"Start of period at {current_time} minutes")
+                schedule_event(event_queue, current_time + random.expovariate(1/5), 'shift_change', team1)
+                schedule_event(event_queue, current_time + random.expovariate(1/5), 'shift_change', team2)
+                schedule_event(event_queue, current_time + random.expovariate(1/10), 'attempt_goal', team1)
+                schedule_event(event_queue, current_time + random.expovariate(1/10), 'attempt_goal', team2)
 
     print(game_stats)
     game_summary(game_stats)

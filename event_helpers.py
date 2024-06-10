@@ -150,3 +150,8 @@ def handle_shot_saved(team1, team2, event, event_queue, game_stats):
         print("rebound")
     else:
         print("saved")    
+
+
+def handle_create_shot_attempt(team1, team2, event, event_queue, game_stats):
+    teams = pd.read_csv('data/teams_2024.csv')
+    team1_stat = teams[(teams['team'] == team1.name) & (teams['situation'] == 'all')]
