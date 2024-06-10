@@ -1,7 +1,7 @@
 class GameStats:
-    def __init__(self, home_team_name="", away_team_name=""):
+    def __init__(self, home_team_name="", away_team_name="", date="", location="", attendance=""):
         self.teams = {
-            "home": {
+            home_team_name: {
                 "name": home_team_name,
                 "goals": 0,
                 "shots": 0,
@@ -14,7 +14,7 @@ class GameStats:
                 "hits": 0,
                 "blockedShots": 0,
             },
-            "away": {
+            away_team_name: {
                 "name": away_team_name,
                 "goals": 0,
                 "shots": 0,

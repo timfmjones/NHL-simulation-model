@@ -2,7 +2,7 @@ import pandas as pd
 import random
 from event import schedule_event
 
-def handle_failed_shot_event(team1, team2, event, event_queue):
+def handle_failed_shot_event(team1, team2, event, event_queue, game_stats):
     print(f"Shot on goal by team {team1.name} at {event.time} minutes")
     if random.random() < 0.5:
 
@@ -33,21 +33,22 @@ def handle_faceoff(team1, team2, event, event_queue, game_stats):
     if random.random() < team1_relative_percentage:
         winning_team = team1
         losing_team = team2
-        game_stats.teams['home']['faceOffsWon'] += 1
-        game_stats.teams['away']['faceOffsLost'] += 1
+        game_stats.teams[team1.name]['faceOffsWon'] += 1
+        game_stats.teams[team2.name]['faceOffsLost'] += 1
  
     else:
         winning_team = team2
         losing_team = team1
-        game_stats.teams['away']['faceOffsWon'] += 1
-        game_stats.teams['home']['faceOffsLost'] += 1
+        game_stats.teams[team2.name]['faceOffsWon'] += 1
+        game_stats.teams[team1.name]['faceOffsLost'] += 1
  
     
 
     print(f"Faceoff won by team {winning_team.name} at {event.time} minutes")
     schedule_event(event_queue, event.time + random.gauss(8, 2), 'attempt_goal', winning_team)
 
-def handle_shot_attempt(team1, team2, event, event_queue):
+def handle_shot_attempt(team1, team2, event, event_queue, game_stats):
+    print("Shot attempt by ", team1.name)
     teams = pd.read_csv('data/teams_2024.csv')
     team1_stat = teams[(teams['team'] == team1.name) & (teams['situation'] == 'all')]
     team1_stats = team1_stat.iloc[0]
@@ -80,17 +81,19 @@ def handle_shot_attempt(team1, team2, event, event_queue):
     random_number = random.random() 
 
     if random_number < blocked_shot_attempt_relative_percentage:
-        print("shot was blocked")
+        # Blocked shot 
         schedule_event(event_queue, event.time + 1, 'block_shot', team2)
     elif random_number < blocked_shot_attempt_relative_percentage + missed_shot_attempt_relative_percentage:
-        print("shot missed")
-        schedule_event(event_queue, event.time + 1, 'block_shot', team2)
+        # Missed shot 
+        schedule_event(event_queue, event.time + 1, 'missed_shot', team1)
     else:
-        print("shot on target")
-        schedule_event(event_queue, event.time + 1, 'save_shot', team2)
+        # On target shot 
+        print("On target shot")
+        # schedule_event(event_queue, event.time + 0.1, 'save_shot', team2)
+        handle_on_goal_shot_attempt(team1, team2, event, event_queue, game_stats)
 
 
-def handle_on_goal_shot_attempt(team1, team2, event, event_queue):
+def handle_on_goal_shot_attempt(team1, team2, event, event_queue, game_stats):
     teams = pd.read_csv('data/teams_2024.csv')
     team1_stat = teams[(teams['team'] == team1.name) & (teams['situation'] == 'all')]
     team1_stats = team1_stat.iloc[0]
@@ -119,13 +122,14 @@ def handle_on_goal_shot_attempt(team1, team2, event, event_queue):
     random_number = random.random() 
 
     if random_number < goals_relative_percentage:
+        game_stats.teams[team1.name]['goals'] +=1
         print("GOAL")
-        print(f"Team {team2.name} scored at {event.time} minutes")
-        schedule_event(event_queue, event.time + 1, 'assist', team2)
+        print(f"Team {team1.name} scored at {event.time} minutes")
+        schedule_event(event_queue, event.time + 0.001, 'assist', team1)
     else:
-        handle_failed_shot_event(team1, team2, event, event_queue)
+        handle_failed_shot_event(team1, team2, event, event_queue, game_stats)
 
-def handle_shot_saved(team1, team2, event, event_queue):
+def handle_shot_saved(team1, team2, event, event_queue, game_stats):
     teams = pd.read_csv('data/teams_2024.csv')
     team1_stat = teams[(teams['team'] == team1.name) & (teams['situation'] == 'all')]
     team1_stats = team1_stat.iloc[0]
