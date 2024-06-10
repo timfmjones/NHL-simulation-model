@@ -3,6 +3,7 @@ import random
 import pandas as pd
 import joblib
 from data_loader import load_data
+from game_stats import GameStats
 
 class Event:
     def __init__(self, time, event_type, team, player=None):
@@ -26,6 +27,9 @@ def simulate_game(team1, team2, model):
     game_duration = period_duration * periods
     score1 = 0
     score2 = 0
+    
+    # Initialize an instance of the GameStats class
+    game_stats = GameStats()
 
     # Schedule initial events (e.g., initial faceoff)
     schedule_event(event_queue, 0, 'faceoff', team1)
@@ -36,7 +40,7 @@ def simulate_game(team1, team2, model):
 
         if event.event_type == 'faceoff':
 
-            handle_faceoff(team1, team2, event, event_queue)
+            handle_faceoff(team1, team2, event, event_queue, game_stats)
 
         elif event.event_type == 'attempt_goal':
             # features = [
@@ -160,6 +164,7 @@ def simulate_game(team1, team2, model):
             schedule_event(event_queue, current_time + random.expovariate(1/10), 'attempt_goal', team1)
             schedule_event(event_queue, current_time + random.expovariate(1/10), 'attempt_goal', team2)
 
+    print(game_stats)
     return round(score1), round(score2)
 
 def main():
@@ -213,7 +218,7 @@ def failed_shot_event(team1, team2, event, event_queue):
         schedule_event(event_queue, event.time + 1, 'save_shot', team2)
 
 
-def handle_faceoff(team1, team2, event, event_queue):
+def handle_faceoff(team1, team2, event, event_queue, game_stats):
     teams = pd.read_csv('data/teams_2024.csv')
     team1_stat = teams[(teams['team'] == team1.name) & (teams['situation'] == 'all')]
     team1_stats = team1_stat.iloc[0]
@@ -235,9 +240,16 @@ def handle_faceoff(team1, team2, event, event_queue):
     if random.random() < team1_relative_percentage:
         winning_team = team1
         losing_team = team2
+        game_stats.teams['home']['faceOffsWon'] += 1
+        game_stats.teams['away']['faceOffsLost'] += 1
+ 
     else:
         winning_team = team2
         losing_team = team1
+        game_stats.teams['away']['faceOffsWon'] += 1
+        game_stats.teams['home']['faceOffsLost'] += 1
+ 
+    
 
     print(f"Faceoff won by team {winning_team.name} at {event.time} minutes")
     schedule_event(event_queue, event.time + random.gauss(8, 2), 'attempt_goal', winning_team)
@@ -316,9 +328,34 @@ def handle_on_goal_shot_attempt(team1, team2, event, event_queue):
     if random_number < goals_relative_percentage:
         print("GOAL")
         print(f"Team {team2.name} scored at {event.time} minutes")
-        schedule_event(event_queue, current_time + 1, 'assist', team2)
+        schedule_event(event_queue, event.time + 1, 'assist', team2)
     else:
         failed_shot_event(team1, team2, event, event_queue)
+
+def handle_shot_saved(team1, team2, event, event_queue):
+    teams = pd.read_csv('data/teams_2024.csv')
+    team1_stat = teams[(teams['team'] == team1.name) & (teams['situation'] == 'all')]
+    team1_stats = team1_stat.iloc[0]
+    team1_saved_on_goal_shot_attempts_for = team1_stats['savedShotsOnGoalFor']
+    team1_rebounds_for = team1_stats['reboundsFor']
+
+    team2_stat = teams[(teams['team'] == team2.name) & (teams['situation'] == 'all')]
+    team2_stats = team2_stat.iloc[0]
+    team2_saved_on_goal_shot_attempts_against = team2_stats['savedShotsOnGoalAgainst']
+    team2_rebounds_against = team2_stats['reboundsAgainst']
+
+    team1_rebound_for_percentage = team1_rebounds_for/team1_saved_on_goal_shot_attempts_for
+    team2_rebound_against_percentage = team2_rebounds_against/team2_saved_on_goal_shot_attempts_against
+
+    rebound_relative_percentage = (team1_rebound_for_percentage/team2_rebound_against_percentage)
+
+    if random.random() < rebound_relative_percentage:
+        print("rebound")
+    else:
+        print("saved")    
+
+def game_summary():
+    print("game stats")
 
 
 
