@@ -89,8 +89,10 @@ def simulate_game(team1, team2, model):
             
             elif event.event_type == 'save_shot':
                 print(f"Saved shot by team {event.team.name} at {current_time} minutes")
-                # Schedule the next events after a save
-                schedule_event(event_queue, current_time + random.gauss(5, 2), 'attempt_goal', event.team)
+                #Update game stats
+                game_stats.teams[event.team.name]['blockedShots'] += 1
+                # Helper method
+                handle_shot_saved(event.team, team2, event, event_queue, game_stats)
 
             elif event.event_type == 'missed_shot':
                 print(f"Missed shot by {event.team.name} at {current_time} minutes")
@@ -154,8 +156,7 @@ def simulate_game(team1, team2, model):
                 schedule_event(event_queue, current_time + random.expovariate(1/10), 'attempt_goal', team1)
                 schedule_event(event_queue, current_time + random.expovariate(1/10), 'attempt_goal', team2)
 
-    print(game_stats)
-    game_summary(game_stats)
+    game_stats.print_game_stats()
     return round(score1), round(score2)
 
 def main():

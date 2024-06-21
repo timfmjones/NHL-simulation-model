@@ -29,9 +29,9 @@ class GameStats:
             }
         }
         self.game_details = {
-            "date": "",
-            "location": "",
-            "attendance": 0,
+            "date": date,
+            "location": location,
+            "attendance": attendance,
             "duration": "",
         }
         self.players = {
@@ -41,3 +41,22 @@ class GameStats:
 
     def __str__(self):
         return f"GameStats(teams={self.teams}, game_details={self.game_details}, players={self.players})"
+
+    def print_game_stats(self):
+        print("Game Details:")
+        print(f"  Date: {self.game_details['date']}")
+        print(f"  Location: {self.game_details['location']}")
+        print(f"  Attendance: {self.game_details['attendance']}\n")
+
+        for team in self.teams.values():
+            print(f"Team: {team['name']}")
+            print(f"  Goals: {team['goals']}")
+            print(f"  Shots: {team['shots']}")
+            print(f"  Saves: {team['saves']}")
+            print(f"  Face-offs Won: {team['faceOffsWon']}")
+            print(f"  Face-offs Lost: {team['faceOffsLost']}")
+            print(f"  Penalty Minutes: {team['penaltyMinutes']}")
+            print(f"  Power Plays: {team['powerPlays']}")
+            print(f"  Power Play Goals: {team['powerPlayGoals']}")
+            print(f"  Hits: {team['hits']}")
+            print(f"  Blocked Shots: {team['blockedShots']}\n")

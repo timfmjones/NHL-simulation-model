@@ -94,6 +94,8 @@ def handle_shot_attempt(team1, team2, event, event_queue, game_stats):
 
 
 def handle_on_goal_shot_attempt(team1, team2, event, event_queue, game_stats):
+    #Input: team1 = shooting, team2 = goaltending
+    #Output: Goal -> faceoff , Save -> handle_shot_save
     teams = pd.read_csv('data/teams_2024.csv')
     team1_stat = teams[(teams['team'] == team1.name) & (teams['situation'] == 'all')]
     team1_stats = team1_stat.iloc[0]
@@ -127,9 +129,11 @@ def handle_on_goal_shot_attempt(team1, team2, event, event_queue, game_stats):
         print(f"Team {team1.name} scored at {event.time} minutes")
         schedule_event(event_queue, event.time + 0.001, 'assist', team1)
     else:
-        handle_failed_shot_event(team1, team2, event, event_queue, game_stats)
+        schedule_event(event_queue, event.time + 0.001, 'save_shot', team2)
 
 def handle_shot_saved(team1, team2, event, event_queue, game_stats):
+    # INPUT: team1 = shooting, team2 = saving 
+    # OUTPUT: Rebound, Save
     teams = pd.read_csv('data/teams_2024.csv')
     team1_stat = teams[(teams['team'] == team1.name) & (teams['situation'] == 'all')]
     team1_stats = team1_stat.iloc[0]
@@ -148,6 +152,7 @@ def handle_shot_saved(team1, team2, event, event_queue, game_stats):
 
     if random.random() < rebound_relative_percentage:
         print("rebound")
+        schedule_event(event_queue, event.time + 0.001, 'rebound', team1)
     else:
         print("saved")    
 
@@ -155,3 +160,4 @@ def handle_shot_saved(team1, team2, event, event_queue, game_stats):
 def handle_create_shot_attempt(team1, team2, event, event_queue, game_stats):
     teams = pd.read_csv('data/teams_2024.csv')
     team1_stat = teams[(teams['team'] == team1.name) & (teams['situation'] == 'all')]
+    
