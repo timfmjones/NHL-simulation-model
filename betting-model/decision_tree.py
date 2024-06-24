@@ -7,7 +7,7 @@ import pandas as pd
 data = pd.read_csv("all_teams.csv")
 data.head()
 
-# Filters dataframe to use only relevant data points
+# Filters dataframe to use only relevant rows and columns
 used_columns = ["team", "season", "goalsFor", "goalsAgainst", "playoffGame"]
 df = data[used_columns]
 filtered_df = df[df["season"] >= 2018]
@@ -28,12 +28,37 @@ X.iloc[:, 0] = encoder.fit_transform(X.iloc[:, 0])
 from sklearn.model_selection import train_test_split
 X_train, X_test, y_train, y_test = train_test_split(X, y, random_state = 17, test_size = 0.2)
 
-# Use decision tree classifier
+#-----------------------------------------------------------------------------------------------
+# Creates a decision tree classifier object and trains it using the training data.
+# This decision tree classifier does not use any splitting criterion.  
 from sklearn.tree import DecisionTreeClassifier
 dtc = DecisionTreeClassifier()
 dtc.fit(X_train, y_train)
 y_pred = dtc.predict(X_test)
 
+"""
+# Uses Gini Index as the splitting criteria.
+def train_using_gini(X_train, X_test, y_train):
+
+    # Creating the classifier object
+    clf_gini = DecisionTreeClassifier(criterion="gini", random_state = 17, max_depth = 3, min_samples_leaf = 5)
+
+    # Performing training
+    clf_gini.fit(X_train, y_train)
+    return clf_gini
+"""
+#-----------------------------------------------------------------------------------------------------------------------
+"""
+# Uses Entropy as the splitting criteria.
+def train_using_entropy(X_train, X_test, y_train):
+
+    # Creating the classifier object
+    clf_entropy = DecisionTreeClassifier(criterion = "entropy", random_state = 17, max_depth = 3, min_samples_leaf = 5)
+    
+    # Performing training
+    clf_entropy.fit(X_train, y_train)
+    return clf_entropy
+"""
 # Creates a confusion matrix to analyze decision tree's ability to predict the data.
 from sklearn.metrics import confusion_matrix
 print(confusion_matrix(y_test, y_pred))
