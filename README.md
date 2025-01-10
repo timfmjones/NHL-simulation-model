@@ -4,7 +4,7 @@ run  `python train_model.py`
 
 run `python game_simulator.py`
 
-Will randomly select two NHL teams and run a Discrete Event Simulation (DES) of a single game.
+Will randomly select two NHL teams and run a Discrete Event Simulation (DES) of a single game. The simulation will provide stats such as score, shots, face offs, saves. 
 
 
 
